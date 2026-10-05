@@ -1,0 +1,40 @@
+{
+  "metaInformation": {
+    "projectIdentification": "example-minimal",
+    "creator": "Example layout exporter",
+    "exportTimestamp": "2026-10-05T08:00:00Z",
+    "lifVersion": "1.0.0"
+  },
+  "layouts": [
+    {
+      "layoutId": "ground_floor",
+      "layoutVersion": "1.0.0",
+      "nodes": [
+        {
+          "nodeId": "n1",
+          "nodePosition": { "x": 0.0, "y": 0.0 },
+          "vehicleTypeNodeProperties": [{ "vehicleTypeId": "RMF.forklift" }]
+        },
+        {
+          "nodeId": "n2",
+          "nodePosition": { "x": 5.0, "y": 0.0 },
+          "vehicleTypeNodeProperties": [{ "vehicleTypeId": "RMF.forklift" }]
+        }
+      ],
+      "edges": [
+        {
+          "edgeId": "e1",
+          "startNodeId": "n1",
+          "endNodeId": "n2",
+          "vehicleTypeEdgeProperties": [{ "vehicleTypeId": "RMF.forklift", "rotationAllowed": false }]
+        }
+      ],
+      "stations": [
+        {
+          "stationId": "s1",
+          "interactionNodeIds": ["n2"]
+        }
+      ]
+    }
+  ]
+}

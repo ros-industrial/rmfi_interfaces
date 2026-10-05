@@ -1,0 +1,264 @@
+{
+  "metaInformation": {
+    "projectIdentification": "example-warehouse-section",
+    "creator": "Example layout exporter",
+    "exportTimestamp": "2026-10-05T08:00:00Z",
+    "lifVersion": "1.0.0"
+  },
+  "layouts": [
+    {
+      "layoutId": "ground_floor",
+      "layoutVersion": "1.0.0",
+      "layoutName": "Ground floor",
+      "layoutLevelId": "L1",
+      "layoutDescription": "Charger, pallet pick-up point and the lift landing on the ground floor.",
+      "nodes": [
+        {
+          "nodeId": "g_charger",
+          "mapId": "map_ground",
+          "nodePosition": { "x": 1.0, "y": 1.0 },
+          "vehicleTypeNodeProperties": [
+            {
+              "vehicleTypeId": "RMF.forklift",
+              "theta": 0.0,
+              "actions": [
+                {
+                  "actionType": "startCharging",
+                  "blockingType": "HARD",
+                  "actionDescription": "Charge the forklift battery.",
+                  "requirementType": "OPTIONAL",
+                  "actionParameters": []
+                }
+              ]
+            },
+            {
+              "vehicleTypeId": "RMF.amr",
+              "theta": 1.5707963267948966,
+              "actions": [
+                {
+                  "actionType": "startCharging",
+                  "blockingType": "HARD",
+                  "actionDescription": "Charge the AMR battery.",
+                  "requirementType": "OPTIONAL"
+                }
+              ]
+            }
+          ],
+          "nodeName": "Charger 1",
+          "nodeDescription": "charger,parkingSpot"
+        },
+        {
+          "nodeId": "g_pick",
+          "mapId": "map_ground",
+          "nodePosition": { "x": 6.0, "y": 1.0 },
+          "vehicleTypeNodeProperties": [
+            {
+              "vehicleTypeId": "RMF.forklift",
+              "theta": 0.0,
+              "actions": [
+                {
+                  "actionType": "pick",
+                  "blockingType": "HARD",
+                  "actionDescription": "Pick up a pallet from the floor.",
+                  "requirementType": "REQUIRED",
+                  "actionParameters": [
+                    { "key": "stationType", "value": "floor" },
+                    { "key": "loadType", "value": "EPAL" },
+                    { "key": "height", "value": "0.0" }
+                  ]
+                }
+              ]
+            },
+            { "vehicleTypeId": "RMF.amr" }
+          ],
+          "nodeName": "Pallet pick-up",
+          "nodeDescription": "workcell"
+        },
+        {
+          "nodeId": "g_lift",
+          "mapId": "map_ground",
+          "nodePosition": { "x": 10.0, "y": 4.0 },
+          "vehicleTypeNodeProperties": [
+            { "vehicleTypeId": "RMF.forklift", "theta": 1.5707963267948966 },
+            { "vehicleTypeId": "RMF.amr", "theta": 1.5707963267948966 }
+          ],
+          "nodeName": "Lift landing, ground floor"
+        }
+      ],
+      "edges": [
+        {
+          "edgeId": "g_charger_to_pick",
+          "startNodeId": "g_charger",
+          "endNodeId": "g_pick",
+          "vehicleTypeEdgeProperties": [
+            {
+              "vehicleTypeId": "RMF.forklift",
+              "rotationAllowed": true,
+              "vehicleOrientation": 0.0,
+              "orientationType": "TANGENTIAL",
+              "rotationAtStartNodeAllowed": "BOTH",
+              "rotationAtEndNodeAllowed": "CCW",
+              "maxSpeed": 1.5,
+              "maxRotationSpeed": 0.5,
+              "minHeight": 0.0,
+              "maxHeight": 2.2,
+              "loadRestriction": {
+                "unloaded": true,
+                "loaded": false,
+                "loadSetNames": ["EPAL"]
+              },
+              "actions": [
+                {
+                  "actionType": "flashWarningLights",
+                  "blockingType": "NONE",
+                  "actionDescription": "Flash the warning lights while driving this lane.",
+                  "requirementType": "CONDITIONAL",
+                  "actionParameters": [{ "key": "pattern", "value": "slow" }]
+                }
+              ],
+              "trajectory": {
+                "knotVector": [0.0, 0.0, 0.0, 1.0, 1.0, 1.0],
+                "controlPoints": [
+                  { "x": 1.0, "y": 1.0, "weight": 1.0 },
+                  { "x": 3.5, "y": 1.5, "weight": 0.8 },
+                  { "x": 6.0, "y": 1.0 }
+                ],
+                "degree": 2
+              },
+              "reentryAllowed": false
+            },
+            { "vehicleTypeId": "RMF.amr", "rotationAllowed": true }
+          ],
+          "edgeName": "Charger to pick-up",
+          "edgeDescription": "One-way lane from the charger to the pallet pick-up point."
+        },
+        {
+          "edgeId": "g_pick_to_lift",
+          "startNodeId": "g_pick",
+          "endNodeId": "g_lift",
+          "vehicleTypeEdgeProperties": [
+            {
+              "vehicleTypeId": "RMF.forklift",
+              "rotationAllowed": false,
+              "vehicleOrientation": 1.5707963267948966,
+              "orientationType": "GLOBAL",
+              "rotationAtStartNodeAllowed": "NONE",
+              "rotationAtEndNodeAllowed": "CW",
+              "maxSpeed": 1.0
+            },
+            { "vehicleTypeId": "RMF.amr", "rotationAllowed": true }
+          ],
+          "edgeName": "Pick-up to lift"
+        },
+        {
+          "edgeId": "lift_up",
+          "startNodeId": "g_lift",
+          "endNodeId": "f1_lift",
+          "vehicleTypeEdgeProperties": [
+            { "vehicleTypeId": "RMF.forklift", "rotationAllowed": false, "reentryAllowed": true },
+            { "vehicleTypeId": "RMF.amr", "rotationAllowed": false }
+          ],
+          "edgeName": "Lift ride up",
+          "edgeDescription": "Joins the two floors through the lift; ends on a node in the first-floor layout."
+        }
+      ],
+      "stations": [
+        {
+          "stationId": "g_charger_station",
+          "interactionNodeIds": ["g_charger"],
+          "stationName": "Charger 1",
+          "stationDescription": "Battery charger for forklifts and AMRs.",
+          "stationHeight": 0.0,
+          "stationPosition": { "x": 1.0, "y": 0.5, "theta": -1.5707963267948966 }
+        },
+        {
+          "stationId": "g_pick_station",
+          "interactionNodeIds": ["g_pick"],
+          "stationName": "Pallet pick-up",
+          "stationHeight": 0.0,
+          "stationPosition": { "x": 6.5, "y": 1.0 }
+        }
+      ]
+    },
+    {
+      "layoutId": "first_floor",
+      "layoutVersion": "1.0.0",
+      "layoutName": "First floor",
+      "layoutLevelId": "L2",
+      "nodes": [
+        {
+          "nodeId": "f1_lift",
+          "mapId": "map_first",
+          "nodePosition": { "x": 10.0, "y": 4.0 },
+          "vehicleTypeNodeProperties": [
+            { "vehicleTypeId": "RMF.forklift" },
+            { "vehicleTypeId": "RMF.amr" }
+          ],
+          "nodeName": "Lift landing, first floor"
+        },
+        {
+          "nodeId": "f1_drop",
+          "mapId": "map_first",
+          "nodePosition": { "x": 15.0, "y": 8.0 },
+          "vehicleTypeNodeProperties": [
+            {
+              "vehicleTypeId": "RMF.forklift",
+              "theta": 3.141592653589793,
+              "actions": [
+                {
+                  "actionType": "drop",
+                  "blockingType": "HARD",
+                  "requirementType": "REQUIRED",
+                  "actionParameters": [
+                    { "key": "stationType", "value": "floor" },
+                    { "key": "loadType", "value": "EPAL" }
+                  ]
+                }
+              ]
+            },
+            { "vehicleTypeId": "RMF.amr" }
+          ],
+          "nodeName": "Staging area",
+          "nodeDescription": "workcell"
+        }
+      ],
+      "edges": [
+        {
+          "edgeId": "f1_lift_to_drop",
+          "startNodeId": "f1_lift",
+          "endNodeId": "f1_drop",
+          "vehicleTypeEdgeProperties": [
+            { "vehicleTypeId": "RMF.forklift", "rotationAllowed": true },
+            { "vehicleTypeId": "RMF.amr", "rotationAllowed": true }
+          ]
+        },
+        {
+          "edgeId": "f1_drop_to_lift",
+          "startNodeId": "f1_drop",
+          "endNodeId": "f1_lift",
+          "vehicleTypeEdgeProperties": [
+            { "vehicleTypeId": "RMF.forklift", "rotationAllowed": true },
+            { "vehicleTypeId": "RMF.amr", "rotationAllowed": true }
+          ]
+        },
+        {
+          "edgeId": "lift_down",
+          "startNodeId": "f1_lift",
+          "endNodeId": "g_lift",
+          "vehicleTypeEdgeProperties": [
+            { "vehicleTypeId": "RMF.forklift", "rotationAllowed": false },
+            { "vehicleTypeId": "RMF.amr", "rotationAllowed": false }
+          ],
+          "edgeName": "Lift ride down"
+        }
+      ],
+      "stations": [
+        {
+          "stationId": "f1_drop_station",
+          "interactionNodeIds": ["f1_drop"],
+          "stationName": "Staging area"
+        }
+      ]
+    }
+  ]
+}

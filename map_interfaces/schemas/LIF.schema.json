@@ -1,0 +1,260 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LIF",
+  "description": "A VDA5050 layout file: LIF format 1.0.0, for VDA5050 protocol 2.1.0.",
+  "type": "object",
+  "required": ["metaInformation", "layouts"],
+  "additionalProperties": false,
+  "properties": {
+    "metaInformation": { "$ref": "#/definitions/MetaInformation" },
+    "layouts": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/Layout" }
+    }
+  },
+  "definitions": {
+    "MetaInformation": {
+      "type": "object",
+      "required": ["projectIdentification", "creator", "exportTimestamp", "lifVersion"],
+      "additionalProperties": false,
+      "properties": {
+        "projectIdentification": { "type": "string" },
+        "creator": { "type": "string" },
+        "exportTimestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 UTC"
+        },
+        "lifVersion": {
+          "type": "string",
+          "const": "1.0.0",
+          "description": "The LIF format version. Independent of the VDA5050 protocol version."
+        }
+      }
+    },
+    "Layout": {
+      "type": "object",
+      "required": ["layoutId", "layoutVersion", "nodes", "edges", "stations"],
+      "additionalProperties": false,
+      "properties": {
+        "layoutId": { "type": "string" },
+        "layoutVersion": {
+          "type": "string",
+          "description": "Version of this layout. Follows lifVersion, not the VDA5050 protocol version."
+        },
+        "layoutName": { "type": "string" },
+        "layoutLevelId": { "type": "string" },
+        "layoutDescription": { "type": "string" },
+        "nodes": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Node" }
+        },
+        "edges": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Edge" }
+        },
+        "stations": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Station" }
+        }
+      }
+    },
+    "Node": {
+      "type": "object",
+      "required": ["nodeId", "nodePosition", "vehicleTypeNodeProperties"],
+      "additionalProperties": false,
+      "properties": {
+        "nodeId": { "type": "string" },
+        "mapId": { "type": "string" },
+        "nodePosition": { "$ref": "#/definitions/NodePosition" },
+        "vehicleTypeNodeProperties": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/VehicleTypeNodeProperty" }
+        },
+        "nodeName": { "type": "string" },
+        "nodeDescription": {
+          "type": "string",
+          "description": "Comma-separated list of the node's location tags, e.g. 'charger,parkingSpot'. Informational only."
+        }
+      }
+    },
+    "NodePosition": {
+      "type": "object",
+      "required": ["x", "y"],
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number", "description": "metres" },
+        "y": { "type": "number", "description": "metres" }
+      }
+    },
+    "StationPosition": {
+      "type": "object",
+      "required": ["x", "y"],
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number", "description": "metres" },
+        "y": { "type": "number", "description": "metres" },
+        "theta": {
+          "type": "number",
+          "minimum": -3.141592653589793,
+          "maximum": 3.141592653589793,
+          "description": "radians"
+        }
+      }
+    },
+    "VehicleTypeNodeProperty": {
+      "type": "object",
+      "required": ["vehicleTypeId"],
+      "additionalProperties": false,
+      "properties": {
+        "vehicleTypeId": { "type": "string" },
+        "theta": {
+          "type": "number",
+          "minimum": -3.141592653589793,
+          "maximum": 3.141592653589793,
+          "description": "radians"
+        },
+        "actions": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Action" }
+        }
+      }
+    },
+    "Edge": {
+      "type": "object",
+      "required": ["edgeId", "startNodeId", "endNodeId", "vehicleTypeEdgeProperties"],
+      "additionalProperties": false,
+      "properties": {
+        "edgeId": { "type": "string" },
+        "startNodeId": { "type": "string" },
+        "endNodeId": {
+          "type": "string",
+          "description": "May reference a node in another layout."
+        },
+        "vehicleTypeEdgeProperties": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/VehicleTypeEdgeProperty" }
+        },
+        "edgeName": { "type": "string" },
+        "edgeDescription": { "type": "string" }
+      }
+    },
+    "VehicleTypeEdgeProperty": {
+      "type": "object",
+      "required": ["vehicleTypeId", "rotationAllowed"],
+      "additionalProperties": false,
+      "properties": {
+        "vehicleTypeId": { "type": "string" },
+        "rotationAllowed": { "type": "boolean" },
+        "vehicleOrientation": { "type": "number", "description": "radians" },
+        "orientationType": { "$ref": "#/definitions/OrientationType" },
+        "rotationAtStartNodeAllowed": { "$ref": "#/definitions/RotationAtNode" },
+        "rotationAtEndNodeAllowed": { "$ref": "#/definitions/RotationAtNode" },
+        "maxSpeed": { "type": "number" },
+        "maxRotationSpeed": { "type": "number" },
+        "minHeight": { "type": "number" },
+        "maxHeight": { "type": "number" },
+        "loadRestriction": { "$ref": "#/definitions/LoadRestriction" },
+        "actions": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Action" }
+        },
+        "trajectory": { "$ref": "#/definitions/Trajectory" },
+        "reentryAllowed": { "type": "boolean" }
+      }
+    },
+    "RotationAtNode": {
+      "type": "string",
+      "enum": ["NONE", "CCW", "CW", "BOTH"],
+      "description": "Allowed rotation directions at the node. Default when omitted: BOTH."
+    },
+    "OrientationType": {
+      "type": "string",
+      "enum": ["GLOBAL", "TANGENTIAL"]
+    },
+    "Trajectory": {
+      "type": "object",
+      "description": "NURBS curve the vehicle follows between the start and end node. knotVector length = number of control points + degree + 1.",
+      "required": ["knotVector", "controlPoints"],
+      "additionalProperties": false,
+      "properties": {
+        "knotVector": { "type": "array", "items": { "type": "number", "minimum": 0.0, "maximum": 1.0 } },
+        "controlPoints": { "type": "array", "items": { "$ref": "#/definitions/ControlPoint" } },
+        "degree": { "type": "integer", "minimum": 1, "description": "Default when omitted: 1." }
+      }
+    },
+    "ControlPoint": {
+      "type": "object",
+      "required": ["x", "y"],
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "weight": { "type": "number", "minimum": 0.0, "description": "Default when omitted: 1.0." }
+      }
+    },
+    "Station": {
+      "type": "object",
+      "required": ["stationId", "interactionNodeIds"],
+      "additionalProperties": false,
+      "properties": {
+        "stationId": { "type": "string" },
+        "interactionNodeIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "stationName": { "type": "string" },
+        "stationDescription": { "type": "string" },
+        "stationHeight": { "type": "number", "minimum": 0.0, "description": "metres. Default when omitted: 0." },
+        "stationPosition": { "$ref": "#/definitions/StationPosition" }
+      }
+    },
+    "Action": {
+      "type": "object",
+      "required": ["actionType", "blockingType"],
+      "additionalProperties": false,
+      "properties": {
+        "actionType": {
+          "type": "string",
+          "description": "e.g. 'startCharging', a dock name, or an application-defined action."
+        },
+        "blockingType": { "$ref": "#/definitions/BlockingType" },
+        "actionDescription": { "type": "string" },
+        "requirementType": { "type": "string", "enum": ["REQUIRED", "CONDITIONAL", "OPTIONAL"] },
+        "actionParameters": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/ActionParameter" }
+        }
+      }
+    },
+    "LoadRestriction": {
+      "type": "object",
+      "required": ["unloaded", "loaded"],
+      "additionalProperties": false,
+      "properties": {
+        "unloaded": { "type": "boolean", "description": "Edge usable when the vehicle carries no load." },
+        "loaded": { "type": "boolean", "description": "Edge usable when the vehicle carries a load." },
+        "loadSetNames": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "ActionParameter": {
+      "type": "object",
+      "required": ["key", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "key": { "type": "string" },
+        "value": {
+          "type": "string",
+          "description": "Always a string. Numbers and booleans are written as text."
+        }
+      }
+    },
+    "BlockingType": {
+      "type": "string",
+      "enum": ["NONE", "SOFT", "HARD"]
+    }
+  }
+}
