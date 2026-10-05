@@ -1,0 +1,349 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SimulationConfig",
+  "description": "Everything a simulator needs to build and run a site. Written with the LIF file, in its map frame. Metres and radians; mesh paths are relative to this file.",
+  "type": "object",
+  "required": ["messaging", "floors", "doors", "lifts", "stations", "robots"],
+  "additionalProperties": false,
+  "properties": {
+    "messaging": { "$ref": "#/definitions/Messaging" },
+    "floors": {
+      "type": "array",
+      "minItems": 1,
+      "description": "At least one floor.",
+      "items": { "$ref": "#/definitions/Floor" }
+    },
+    "doors": {
+      "type": "array",
+      "description": "Building doors. Empty when the site has none. Lift cabin doors are listed under their lift.",
+      "items": { "$ref": "#/definitions/Door" }
+    },
+    "lifts": {
+      "type": "array",
+      "description": "Lifts joining floors. Empty when the site has none.",
+      "items": { "$ref": "#/definitions/Lift" }
+    },
+    "stations": {
+      "type": "array",
+      "description": "Points where a robot interacts with the site, such as picking up or dropping off a load. Empty when the site has none.",
+      "items": { "$ref": "#/definitions/Station" }
+    },
+    "robots": {
+      "type": "array",
+      "minItems": 1,
+      "description": "At least one robot.",
+      "items": { "$ref": "#/definitions/Robot" }
+    }
+  },
+  "definitions": {
+    "Messaging": {
+      "type": "object",
+      "description": "How robots and devices connect to the fleet controller over MQTT.",
+      "required": ["broker", "robot_interface", "device_interface", "vda5050_version"],
+      "additionalProperties": false,
+      "properties": {
+        "broker": {
+          "type": "string",
+          "description": "MQTT broker address, e.g. 'tcp://localhost:1883'."
+        },
+        "robot_interface": {
+          "type": "string",
+          "const": "uagv",
+          "description": "First segment of robot topics: {robot_interface}/v{major}/{manufacturer}/{serial}/..."
+        },
+        "device_interface": {
+          "type": "string",
+          "const": "device",
+          "description": "First segment of device topics, such as a lift's: {device_interface}/v1/{manufacturer}/{device_id}/..."
+        },
+        "vda5050_version": {
+          "type": "string",
+          "description": "VDA5050 protocol version the robots speak, e.g. '2.1.0'."
+        }
+      }
+    },
+    "MeshPath": {
+      "type": "string",
+      "pattern": "^(?!/)(?!.*\\.\\.)[^\\\\]+\\.glb$",
+      "description": "A glTF binary (.glb) file, as a path relative to this file. No absolute paths and no '..'."
+    },
+    "Point2": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": { "type": "number" },
+      "description": "[x, y] in metres."
+    },
+    "Floor": {
+      "type": "object",
+      "required": ["map_id", "elevation", "visual_mesh", "collision_mesh"],
+      "additionalProperties": false,
+      "properties": {
+        "map_id": {
+          "type": "string",
+          "description": "Floor id. Matches a mapId in the LIF file. Unique."
+        },
+        "name": {
+          "type": "string",
+          "description": "Floor name as people know it, e.g. 'Ground floor'."
+        },
+        "elevation": {
+          "type": "number",
+          "description": "Height of the floor surface in metres."
+        },
+        "visual_mesh": {
+          "$ref": "#/definitions/MeshPath",
+          "description": "The floor's walls, floor areas and fixed models, for display."
+        },
+        "collision_mesh": {
+          "$ref": "#/definitions/MeshPath",
+          "description": "The same, simplified for collision checks."
+        }
+      }
+    },
+    "Door": {
+      "description": "A building door, given by the two ends of its doorway. Its kind decides how it opens.",
+      "oneOf": [
+        { "$ref": "#/definitions/SingleSlidingDoor" },
+        { "$ref": "#/definitions/DoubleSlidingDoor" },
+        { "$ref": "#/definitions/SingleSwingDoor" },
+        { "$ref": "#/definitions/DoubleSwingDoor" }
+      ]
+    },
+    "SingleSlidingDoor": {
+      "type": "object",
+      "required": ["name", "map_id", "kind", "left_end", "right_end", "slides_towards", "mesh"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "description": "Door name. Unique." },
+        "map_id": { "type": "string", "description": "Floor the door is on. Matches a floor's map_id." },
+        "kind": { "const": "single_sliding" },
+        "left_end": { "$ref": "#/definitions/Point2", "description": "Left end of the doorway, [x, y] in metres." },
+        "right_end": { "$ref": "#/definitions/Point2", "description": "Right end of the doorway, [x, y] in metres." },
+        "slides_towards": { "enum": ["left", "right"], "description": "The end the door slides towards when it opens." },
+        "mesh": { "$ref": "#/definitions/MeshPath", "description": "The door panel." }
+      }
+    },
+    "DoubleSlidingDoor": {
+      "type": "object",
+      "required": ["name", "map_id", "kind", "left_end", "right_end", "left_right_ratio", "left_mesh", "right_mesh"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "description": "Door name. Unique." },
+        "map_id": { "type": "string", "description": "Floor the door is on. Matches a floor's map_id." },
+        "kind": { "const": "double_sliding" },
+        "left_end": { "$ref": "#/definitions/Point2", "description": "Left end of the doorway, [x, y] in metres." },
+        "right_end": { "$ref": "#/definitions/Point2", "description": "Right end of the doorway, [x, y] in metres." },
+        "left_right_ratio": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Width of the left panel divided by the width of the right panel. 1 means equal panels."
+        },
+        "left_mesh": { "$ref": "#/definitions/MeshPath", "description": "The left panel." },
+        "right_mesh": { "$ref": "#/definitions/MeshPath", "description": "The right panel." }
+      }
+    },
+    "SingleSwingDoor": {
+      "type": "object",
+      "required": ["name", "map_id", "kind", "left_end", "right_end", "pivot_on", "swing", "mesh"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "description": "Door name. Unique." },
+        "map_id": { "type": "string", "description": "Floor the door is on. Matches a floor's map_id." },
+        "kind": { "const": "single_swing" },
+        "left_end": { "$ref": "#/definitions/Point2", "description": "Left end of the doorway, [x, y] in metres." },
+        "right_end": { "$ref": "#/definitions/Point2", "description": "Right end of the doorway, [x, y] in metres." },
+        "pivot_on": { "enum": ["left", "right"], "description": "The end the door's hinge is on." },
+        "swing": { "$ref": "#/definitions/Swing" },
+        "mesh": { "$ref": "#/definitions/MeshPath", "description": "The door panel." }
+      }
+    },
+    "DoubleSwingDoor": {
+      "type": "object",
+      "required": ["name", "map_id", "kind", "left_end", "right_end", "left_right_ratio", "swing", "left_mesh", "right_mesh"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "description": "Door name. Unique." },
+        "map_id": { "type": "string", "description": "Floor the door is on. Matches a floor's map_id." },
+        "kind": { "const": "double_swing" },
+        "left_end": { "$ref": "#/definitions/Point2", "description": "Left end of the doorway, [x, y] in metres." },
+        "right_end": { "$ref": "#/definitions/Point2", "description": "Right end of the doorway, [x, y] in metres." },
+        "left_right_ratio": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Width of the left panel divided by the width of the right panel. 1 means equal panels."
+        },
+        "swing": { "$ref": "#/definitions/Swing" },
+        "left_mesh": { "$ref": "#/definitions/MeshPath", "description": "The left panel." },
+        "right_mesh": { "$ref": "#/definitions/MeshPath", "description": "The right panel." }
+      }
+    },
+    "SwingAngle": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 3.141592653589793,
+      "description": "How far the door opens, in radians."
+    },
+    "Swing": {
+      "description": "Which way a swing door opens, and how far. 'Forward' and 'backward' are the two sides of the doorway.",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["direction", "angle"],
+          "additionalProperties": false,
+          "properties": {
+            "direction": { "const": "forward" },
+            "angle": { "$ref": "#/definitions/SwingAngle" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["direction", "angle"],
+          "additionalProperties": false,
+          "properties": {
+            "direction": { "const": "backward" },
+            "angle": { "$ref": "#/definitions/SwingAngle" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["direction", "forward_angle", "backward_angle"],
+          "additionalProperties": false,
+          "properties": {
+            "direction": { "const": "both" },
+            "forward_angle": { "$ref": "#/definitions/SwingAngle" },
+            "backward_angle": { "$ref": "#/definitions/SwingAngle" }
+          }
+        }
+      ]
+    },
+    "Lift": {
+      "type": "object",
+      "required": ["name", "manufacturer", "center", "yaw", "cabin", "cabin_doors", "initial_map_id"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Lift name. Unique and stable. Also the device_id in its device topics."
+        },
+        "manufacturer": {
+          "type": "string",
+          "description": "Lift manufacturer. The {manufacturer} segment of its device topics."
+        },
+        "center": {
+          "$ref": "#/definitions/Point2",
+          "description": "Centre of the cabin, [x, y] in metres. The same on every floor."
+        },
+        "yaw": {
+          "type": "number",
+          "description": "Rotation of the cabin, in radians."
+        },
+        "cabin": {
+          "type": "object",
+          "required": ["width", "depth", "mesh"],
+          "additionalProperties": false,
+          "properties": {
+            "width": { "type": "number", "exclusiveMinimum": 0, "description": "Cabin width in metres." },
+            "depth": { "type": "number", "exclusiveMinimum": 0, "description": "Cabin depth in metres." },
+            "mesh": { "$ref": "#/definitions/MeshPath", "description": "The cabin." }
+          }
+        },
+        "cabin_doors": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "description": "One entry per cabin face that has a door.",
+          "items": { "$ref": "#/definitions/CabinDoor" }
+        },
+        "initial_map_id": {
+          "type": "string",
+          "description": "Floor the cabin starts on. Matches a floor's map_id, and a floor at least one cabin door opens on."
+        }
+      }
+    },
+    "CabinDoor": {
+      "type": "object",
+      "required": ["face", "width", "opens_on", "mesh"],
+      "additionalProperties": false,
+      "properties": {
+        "face": {
+          "enum": ["front", "back", "left", "right"],
+          "description": "Cabin face the door is on. Each face appears at most once per lift."
+        },
+        "width": { "type": "number", "exclusiveMinimum": 0, "description": "Door width in metres." },
+        "opens_on": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string" },
+          "description": "Floors this door opens on. Each matches a floor's map_id. The lift serves every floor listed by any of its doors."
+        },
+        "mesh": { "$ref": "#/definitions/MeshPath", "description": "The door panel." }
+      }
+    },
+    "Station": {
+      "type": "object",
+      "required": ["station_id", "map_id", "position"],
+      "additionalProperties": false,
+      "properties": {
+        "station_id": {
+          "type": "string",
+          "description": "Station id. Matches a stationId in the LIF file. Unique."
+        },
+        "map_id": {
+          "type": "string",
+          "description": "Floor the station is on. Matches a floor's map_id."
+        },
+        "position": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 3,
+          "items": { "type": "number" },
+          "description": "[x, y] in metres, or [x, y, yaw] when the station has a heading."
+        },
+        "station_type": {
+          "type": "string",
+          "description": "How a load is handled here, e.g. 'floor' or 'rack'. The pick action's stationType."
+        },
+        "load_type": {
+          "type": "string",
+          "description": "Kind of load handled here, e.g. 'EPAL'. The pick action's loadType."
+        }
+      }
+    },
+    "Robot": {
+      "type": "object",
+      "required": ["name", "manufacturer", "serial", "model", "map_id", "start_position"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Robot name. Unique and stable."
+        },
+        "manufacturer": {
+          "type": "string",
+          "description": "Robot manufacturer. The {manufacturer} segment of its robot topics."
+        },
+        "serial": {
+          "type": "string",
+          "description": "Robot serial number. Same as name."
+        },
+        "model": {
+          "type": "string",
+          "description": "Robot model. Matches a vehicleTypeId in the LIF file."
+        },
+        "map_id": {
+          "type": "string",
+          "description": "Floor the robot starts on. Matches a floor's map_id and a mapId in the LIF file."
+        },
+        "start_position": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": { "type": "number" },
+          "description": "[x, y, yaw]: metres, metres, radians."
+        }
+      }
+    }
+  }
+}
