@@ -1,0 +1,93 @@
+{
+  "messaging": {
+    "broker": "tcp://localhost:1883",
+    "robot_interface": "uagv",
+    "device_interface": "device",
+    "vda5050_version": "2.1.0"
+  },
+  "floors": [
+    {
+      "map_id": "L1",
+      "name": "Ground floor",
+      "elevation": 0.0,
+      "visual_mesh": "meshes/level_1_visual.glb",
+      "collision_mesh": "meshes/level_1_collision.glb"
+    },
+    {
+      "map_id": "L2",
+      "name": "Mezzanine",
+      "elevation": 4.0,
+      "visual_mesh": "meshes/level_2_visual.glb",
+      "collision_mesh": "meshes/level_2_collision.glb"
+    }
+  ],
+  "doors": [
+    {
+      "name": "dock_door",
+      "map_id": "L1",
+      "kind": "double_sliding",
+      "left_end": [12.0, 3.0],
+      "right_end": [12.0, 6.0],
+      "left_right_ratio": 1.0,
+      "left_mesh": "meshes/door_7_left.glb",
+      "right_mesh": "meshes/door_7_right.glb"
+    },
+    {
+      "name": "office_door",
+      "map_id": "L2",
+      "kind": "single_swing",
+      "left_end": [2.0, 10.0],
+      "right_end": [3.0, 10.0],
+      "pivot_on": "left",
+      "swing": { "direction": "forward", "angle": 1.5707963267948966 },
+      "mesh": "meshes/door_9_body.glb"
+    }
+  ],
+  "lifts": [
+    {
+      "name": "goods_lift",
+      "manufacturer": "RMF",
+      "center": [20.0, 8.0],
+      "yaw": 0.0,
+      "cabin": { "width": 2.5, "depth": 3.0, "mesh": "meshes/lift_4.glb" },
+      "cabin_doors": [
+        { "face": "front", "width": 2.0, "opens_on": ["L1", "L2"], "mesh": "meshes/lift_4_front.glb" }
+      ],
+      "initial_map_id": "L1"
+    }
+  ],
+  "stations": [
+    {
+      "station_id": "pallet_in_station",
+      "map_id": "L1",
+      "position": [5.0, 4.0, 0.0],
+      "station_type": "floor",
+      "load_type": "EPAL"
+    },
+    {
+      "station_id": "staging_station",
+      "map_id": "L2",
+      "position": [15.0, 12.0],
+      "station_type": "floor",
+      "load_type": "EPAL"
+    }
+  ],
+  "robots": [
+    {
+      "name": "forklift_1",
+      "manufacturer": "RMF",
+      "serial": "forklift_1",
+      "model": "RMF.forklift",
+      "map_id": "L1",
+      "start_position": [1.0, 1.0, 0.0]
+    },
+    {
+      "name": "forklift_2",
+      "manufacturer": "RMF",
+      "serial": "forklift_2",
+      "model": "RMF.forklift",
+      "map_id": "L1",
+      "start_position": [1.0, 3.0, 0.0]
+    }
+  ]
+}
